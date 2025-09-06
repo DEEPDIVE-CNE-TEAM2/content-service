@@ -23,10 +23,10 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Override
     @Transactional
-    public FacilityResponse createFacility(FacilityCreateRequest request, Long userId, String role) {
+    public FacilityResponse createFacility(FacilityCreateRequest request, Long userId, String role, Long regionId) {
+
         adminAuthHelper.validateAdmin(role);
 
-        Long regionId = request.getRegionId();
         Region region = regionRepository.findById(regionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_REGION));
 

@@ -33,6 +33,4 @@ public class FacilityCreateRequest {
     @NotNull
     private LocalTime usageEndTime;
 
-    @NotNull
-    private Long regionId;
 }

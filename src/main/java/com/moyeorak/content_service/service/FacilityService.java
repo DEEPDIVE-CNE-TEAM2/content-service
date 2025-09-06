@@ -7,7 +7,7 @@ import com.moyeorak.content_service.dto.FacilityResponse;
 public interface FacilityService {
 
     // 시설 등록
-    public FacilityResponse createFacility(FacilityCreateRequest request, Long userId, String role);
+    FacilityResponse createFacility(FacilityCreateRequest request, Long userId, String role, Long regionId);
 
     // 특정 지역의 시설 목록 조회
     //List<FacilitySimpleResponse> getFacilitiesByRegion(Long regionId);

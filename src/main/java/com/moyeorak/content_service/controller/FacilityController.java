@@ -25,10 +25,13 @@ public class FacilityController {
     public ResponseEntity<FacilityResponse> createFacility(
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role,
-            @RequestBody FacilityCreateRequest request
+            @RequestHeader("X-Region-Id") Long regionId,
+            @RequestBody @Valid FacilityCreateRequest request
     ) {
-        log.info("시설 등록 요청: {}", request.getName());
-        FacilityResponse response = facilityService.createFacility(request, userId, role);
+        log.info("시설 등록 요청: {}, regionId: {}", request.getName(), regionId);
+        FacilityResponse response = facilityService.createFacility(request, userId, role, regionId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+
 }
