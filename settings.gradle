@@ -8,4 +8,4 @@ dependencyResolutionManagement {
     }
 }
 
-//includeBuild("../moyeorak-common")
+includeBuild("../moyeorak-common")
