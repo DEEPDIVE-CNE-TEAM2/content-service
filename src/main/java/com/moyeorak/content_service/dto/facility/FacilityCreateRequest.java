@@ -1,4 +1,4 @@
-package com.moyeorak.content_service.dto;
+package com.moyeorak.content_service.dto.facility;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;

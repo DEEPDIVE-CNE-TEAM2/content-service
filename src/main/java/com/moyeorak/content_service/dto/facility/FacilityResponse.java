@@ -1,4 +1,4 @@
-package com.moyeorak.content_service.dto;
+package com.moyeorak.content_service.dto.facility;
 
 import lombok.Builder;
 import lombok.Getter;

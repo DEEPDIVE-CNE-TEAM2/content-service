@@ -1,8 +1,6 @@
 package com.moyeorak.content_service.controller;
 
-
-import com.moyeorak.content_service.dto.FacilityCreateRequest;
-import com.moyeorak.content_service.dto.FacilityResponse;
+import com.moyeorak.content_service.dto.facility.*;
 import com.moyeorak.content_service.service.FacilityService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -12,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -25,13 +24,46 @@ public class FacilityController {
     public ResponseEntity<FacilityResponse> createFacility(
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role,
-            @RequestHeader("X-Region-Id") Long regionId,
+            @RequestHeader("X-User-Region-Id") Long regionId,
             @RequestBody @Valid FacilityCreateRequest request
     ) {
-        log.info("시설 등록 요청: {}, regionId: {}", request.getName(), regionId);
+        log.info("시설 등록 요청 - name: {}, regionId: {}, userId: {}, role: {}",
+                request.getName(), regionId, userId, role);
         FacilityResponse response = facilityService.createFacility(request, userId, role, regionId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "시설 리스트 조회")
+    @GetMapping
+    public ResponseEntity<List<AdminFacilityListResponse>> getFacilityList(
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Region-Id") Long regionId
+    ) {
+        log.info("관리자 시설 리스트 조회 요청 - regionId: {}, role: {}", regionId, role);
+        List<AdminFacilityListResponse> facilities = facilityService.getFacilityList(regionId, role);
+        return ResponseEntity.ok(facilities);
+    }
 
+    @Operation(summary = "시설 상세 조회")
+    @GetMapping("/{facilityId}")
+    public ResponseEntity<AdminFacilityDetailResponse> getFacilityDetail(
+            @PathVariable Long facilityId,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Region-Id") Long regionId
+    ) {
+        log.info("관리자 시설 상세 조회 요청 - facilityId: {}, regionId: {}, role: {}",
+                facilityId, regionId, role);
+        AdminFacilityDetailResponse detail = facilityService.getFacilityDetail(facilityId, regionId, role);
+        return ResponseEntity.ok(detail);
+    }
+
+    @Operation(summary = "시설 리스트 조회 (일반 사용자)")
+    @GetMapping("/public")
+    public ResponseEntity<List<FacilityDetailResponse>> getFacilityListForUser(
+            @RequestParam("regionId") Long regionId
+    ) {
+        log.info("일반 사용자 시설 리스트 조회 요청 - regionId: {}", regionId);
+        List<FacilityDetailResponse> response = facilityService.getFacilityListForUser(regionId);
+        return ResponseEntity.ok(response);
+    }
 }

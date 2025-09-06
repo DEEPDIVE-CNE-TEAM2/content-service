@@ -12,4 +12,5 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
 
     // 시설명 + 지역으로 유니크 검증 시
     boolean existsByNameAndRegionId(String name, Long regionId);
+
 }
