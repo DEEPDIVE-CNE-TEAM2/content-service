@@ -21,7 +21,7 @@ public class FacilityController {
 
     @Operation(summary = "시설 등록")
     @PostMapping
-    public ResponseEntity<FacilityResponse> createFacility(
+    public ResponseEntity<FacilityCreateResponse> createFacility(
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Region-Id") Long regionId,
@@ -29,7 +29,7 @@ public class FacilityController {
     ) {
         log.info("시설 등록 요청 - name: {}, regionId: {}, userId: {}, role: {}",
                 request.getName(), regionId, userId, role);
-        FacilityResponse response = facilityService.createFacility(request, userId, role, regionId);
+        FacilityCreateResponse response = facilityService.createFacility(request, userId, role, regionId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -65,5 +65,32 @@ public class FacilityController {
         log.info("일반 사용자 시설 리스트 조회 요청 - regionId: {}", regionId);
         List<FacilityDetailResponse> response = facilityService.getFacilityListForUser(regionId);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "시설 수정")
+    @PutMapping("/{facilityId}")
+    public ResponseEntity<AdminFacilityDetailResponse> updateFacility(
+            @PathVariable Long facilityId,
+            @Valid @RequestBody FacilityUpdateRequest request,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Region-Id") Long regionId
+    ) {
+        log.info("시설 수정 요청 - facilityId: {}, role: {}, regionId: {}", facilityId, role, regionId);
+        AdminFacilityDetailResponse response = facilityService.updateFacility(facilityId, request, role, regionId);
+        log.info("시설 수정 완료 - facilityId: {}", facilityId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "시설 삭제")
+    @DeleteMapping("/{facilityId}")
+    public ResponseEntity<Void> deleteFacility(
+            @PathVariable Long facilityId,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Region-Id") Long regionId
+    ) {
+        log.info("시설 삭제 요청 - facilityId: {}, role: {}, regionId: {}", facilityId, role, regionId);
+        facilityService.deleteFacility(facilityId, role, regionId);
+        log.info("시설 삭제 완료 - facilityId: {}", facilityId);
+        return ResponseEntity.noContent().build();
     }
 }

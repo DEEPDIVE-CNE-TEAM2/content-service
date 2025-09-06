@@ -3,7 +3,6 @@ package com.moyeorak.content_service.dto.facility;
 import lombok.*;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

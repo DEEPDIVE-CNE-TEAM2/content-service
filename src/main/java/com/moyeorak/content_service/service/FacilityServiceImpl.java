@@ -12,6 +12,7 @@ import com.moyeorak.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Override
     @Transactional
-    public FacilityResponse createFacility(FacilityCreateRequest request, Long userId, String role, Long regionId) {
+    public FacilityCreateResponse createFacility(FacilityCreateRequest request, Long userId, String role, Long regionId) {
 
         adminAuthHelper.validateAdmin(role);
 
@@ -37,34 +38,21 @@ public class FacilityServiceImpl implements FacilityService {
 
         Facility facility = Facility.builder()
                 .name(request.getName())
-                .location(request.getLocation())
                 .address(request.getAddress())
+                .location(request.getLocation())
+                .area(request.getArea())
+                .usageStartTime(LocalTime.parse(request.getUsageStartTime()))
+                .usageEndTime(LocalTime.parse(request.getUsageEndTime()))
                 .contact(request.getContact())
-                .imageUrl(request.getImageUrl())
                 .capacity(request.getCapacity())
                 .description(request.getDescription())
-                .area(request.getArea())
-                .usageStartTime(request.getUsageStartTime())
-                .usageEndTime(request.getUsageEndTime())
+                .imageUrl(request.getImageUrl())
                 .region(region)
                 .build();
 
         Facility saved = facilityRepository.save(facility);
 
-        return FacilityResponse.builder()
-                .id(saved.getId())
-                .name(saved.getName())
-                .location(saved.getLocation())
-                .address(saved.getAddress())
-                .contact(saved.getContact())
-                .imageUrl(saved.getImageUrl())
-                .capacity(saved.getCapacity())
-                .description(saved.getDescription())
-                .area(saved.getArea())
-                .usageStartTime(saved.getUsageStartTime())
-                .usageEndTime(saved.getUsageEndTime())
-                .regionId(region.getId())
-                .build();
+        return FacilityCreateResponse.from(saved);
     }
 
 
@@ -130,4 +118,56 @@ public class FacilityServiceImpl implements FacilityService {
                         .build())
                 .toList();
     }
+
+    @Override
+    @Transactional
+    public AdminFacilityDetailResponse updateFacility(Long facilityId, FacilityUpdateRequest request, String role, Long regionId) {
+        adminAuthHelper.validateAdmin(role);
+
+        Facility facility = facilityRepository.findById(facilityId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_FACILITY));
+
+        if (!facility.getRegion().getId().equals(regionId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_FACILITY_ACCESS);
+        }
+
+        facility.setName(request.getName());
+        facility.setAddress(request.getAddress());
+        facility.setUsageStartTime(LocalTime.parse(request.getUsageStartTime()));
+        facility.setUsageEndTime(LocalTime.parse(request.getUsageEndTime()));
+        facility.setContact(request.getContact());
+        facility.setCapacity(request.getCapacity());
+        facility.setDescription(request.getDescription());
+        facility.setImageUrl(request.getImageUrl());
+
+        return AdminFacilityDetailResponse.builder()
+                .id(facility.getId())
+                .name(facility.getName())
+                .address(facility.getAddress())
+                .usageStartTime(facility.getUsageStartTime().toString())
+                .usageEndTime(facility.getUsageEndTime().toString())
+                .contact(facility.getContact())
+                .capacity(facility.getCapacity())
+                .description(facility.getDescription())
+                .imageUrl(facility.getImageUrl())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteFacility(Long facilityId, String role, Long regionId) {
+        adminAuthHelper.validateAdmin(role);
+
+        Facility facility = facilityRepository.findById(facilityId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_FACILITY));
+
+        if (!facility.getRegion().getId().equals(regionId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_FACILITY_ACCESS);
+        }
+
+        facilityRepository.delete(facility);
+    }
+
+
+
 }
