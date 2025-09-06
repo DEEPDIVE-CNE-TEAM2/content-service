@@ -6,7 +6,6 @@ import com.moyeorak.content_service.entity.Region;
 import com.moyeorak.content_service.repository.RegionRepository;
 import com.moyeorak.common.exception.BusinessException;
 import com.moyeorak.common.exception.ErrorCode;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
