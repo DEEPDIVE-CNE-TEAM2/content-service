@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -41,8 +42,8 @@ public class FacilityServiceImpl implements FacilityService {
                 .address(request.getAddress())
                 .location(request.getLocation())
                 .area(request.getArea())
-                .usageStartTime(LocalTime.parse(request.getUsageStartTime()))
-                .usageEndTime(LocalTime.parse(request.getUsageEndTime()))
+                .usageStartTime(parseTimeOrThrow(request.getUsageStartTime()))
+                .usageEndTime(parseTimeOrThrow(request.getUsageEndTime()))
                 .contact(request.getContact())
                 .capacity(request.getCapacity())
                 .description(request.getDescription())
@@ -131,10 +132,14 @@ public class FacilityServiceImpl implements FacilityService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_FACILITY_ACCESS);
         }
 
+        if (!facility.getName().equals(request.getName()) &&
+                facilityRepository.existsByNameAndRegionId(request.getName(), regionId)) {
+            throw new BusinessException(ErrorCode.FACILITY_NAME_DUPLICATE);
+        }
         facility.setName(request.getName());
         facility.setAddress(request.getAddress());
-        facility.setUsageStartTime(LocalTime.parse(request.getUsageStartTime()));
-        facility.setUsageEndTime(LocalTime.parse(request.getUsageEndTime()));
+        facility.setUsageStartTime(parseTimeOrThrow(request.getUsageStartTime()));
+        facility.setUsageEndTime(parseTimeOrThrow(request.getUsageEndTime()));
         facility.setContact(request.getContact());
         facility.setCapacity(request.getCapacity());
         facility.setDescription(request.getDescription());
@@ -168,6 +173,12 @@ public class FacilityServiceImpl implements FacilityService {
         facilityRepository.delete(facility);
     }
 
-
+    private LocalTime parseTimeOrThrow(String timeString) {
+        try {
+            return LocalTime.parse(timeString);
+        } catch (DateTimeParseException e) {
+            throw new BusinessException(ErrorCode.INVALID_TIME_FORMAT);
+        }
+    }
 
 }
