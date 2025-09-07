@@ -3,10 +3,7 @@ package com.moyeorak.content_service.service;
 import com.moyeorak.common.exception.BusinessException;
 import com.moyeorak.common.exception.ErrorCode;
 import com.moyeorak.content_service.common.AdminAuthHelper;
-import com.moyeorak.content_service.dto.program.ProgramCreateRequest;
-import com.moyeorak.content_service.dto.program.ProgramDetailResponse;
-import com.moyeorak.content_service.dto.program.ProgramListResponse;
-import com.moyeorak.content_service.dto.program.ProgramResponse;
+import com.moyeorak.content_service.dto.program.*;
 import com.moyeorak.content_service.entity.Facility;
 import com.moyeorak.content_service.entity.Program;
 import com.moyeorak.content_service.entity.Region;
@@ -115,6 +112,79 @@ public class ProgramServiceImpl implements ProgramService {
         // DTO로 변환
         return toProgramDetailResponse(program);
     }
+
+    @Override
+    @Transactional
+    public Long updateProgram(Long programId, ProgramUpdateRequest request, String role, Long regionId) {
+        // 1. 관리자 권한 검증
+        adminAuthHelper.validateAdmin(role);
+
+        // 2. 프로그램 조회
+        Program program = programRepository.findById(programId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROGRAM));
+
+        // 3. 지역 검증 - 이 관리자 지역 소속 프로그램만 수정 가능
+        if (!program.getRegion().getId().equals(regionId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
+        // 4. 값이 있는 필드만 덮어쓰기
+        if (request.getTitle() != null) program.setTitle(request.getTitle());
+        if (request.getCategory() != null) program.setCategory(request.getCategory());
+        if (request.getTarget() != null) program.setTarget(request.getTarget());
+        if (request.getInstructorName() != null) program.setInstructorName(request.getInstructorName());
+        if (request.getStatus() != null) {
+            program.setStatus("CLOSED".equalsIgnoreCase(request.getStatus())
+                    ? Program.Status.CLOSED : Program.Status.OPEN);
+        }
+        if (request.getUsageStartDate() != null) program.setUsageStartDate(request.getUsageStartDate());
+        if (request.getUsageEndDate() != null) program.setUsageEndDate(request.getUsageEndDate());
+        if (request.getClassStartTime() != null) program.setClassStartTime(request.getClassStartTime());
+        if (request.getClassEndTime() != null) program.setClassEndTime(request.getClassEndTime());
+        if (request.getRegistrationStartDate() != null) program.setRegistrationStartDate(request.getRegistrationStartDate());
+        if (request.getRegistrationEndDate() != null) program.setRegistrationEndDate(request.getRegistrationEndDate());
+        if (request.getCancelEndDate() != null) program.setCancelEndDate(request.getCancelEndDate());
+        if (request.getInPrice() != null) program.setInPrice(request.getInPrice());
+        if (request.getOutPrice() != null) program.setOutPrice(request.getOutPrice());
+        if (request.getCapacity() != null) program.setCapacity(request.getCapacity());
+        if (request.getContact() != null) program.setContact(request.getContact());
+        if (request.getImageUrl() != null) program.setImageUrl(request.getImageUrl());
+        if (request.getDescription() != null) program.setDescription(request.getDescription());
+
+        // 5. 시설 변경 시, 지역 일치 검증
+        if (request.getFacilityId() != null) {
+            Facility facility = facilityRepository.findById(request.getFacilityId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_FACILITY));
+
+            if (!facility.getRegion().getId().equals(program.getRegion().getId())) {
+                throw new BusinessException(ErrorCode.FACILITY_REGION_MISMATCH);
+            }
+
+            program.setFacility(facility);
+        }
+
+        return program.getId();
+    }
+
+    @Override
+    @Transactional
+    public void deleteProgram(Long programId, String role, Long regionId) {
+        // 관리자 권한 검증
+        adminAuthHelper.validateAdmin(role);
+
+        // 프로그램 조회
+        Program program = programRepository.findById(programId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROGRAM));
+
+        // 지역 관리자 검증
+        if (!program.getRegion().getId().equals(regionId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
+        // 삭제
+        programRepository.delete(program);
+    }
+
 
 
     // 시간 포매팅

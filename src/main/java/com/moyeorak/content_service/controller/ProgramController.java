@@ -1,11 +1,9 @@
 package com.moyeorak.content_service.controller;
 
+import com.moyeorak.content_service.dto.MessageResponse;
 import com.moyeorak.content_service.dto.facility.FacilityCreateRequest;
 import com.moyeorak.content_service.dto.facility.FacilityCreateResponse;
-import com.moyeorak.content_service.dto.program.ProgramCreateRequest;
-import com.moyeorak.content_service.dto.program.ProgramDetailResponse;
-import com.moyeorak.content_service.dto.program.ProgramListResponse;
-import com.moyeorak.content_service.dto.program.ProgramResponse;
+import com.moyeorak.content_service.dto.program.*;
 import com.moyeorak.content_service.service.ProgramService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -47,7 +45,8 @@ public class ProgramController {
             @RequestParam(required = false) String title
     ) {
         Long finalRegionId = (targetRegionId != null) ? targetRegionId : regionId;
-
+        log.info("프로그램 리스트 조회 요청 - regionId: {}, userId: {}, role: {}, title: {}",
+                finalRegionId, userId, role, title);
         List<ProgramListResponse> responses =
                 programService.getProgramsByRegionAndTitle(role, finalRegionId, title);
 
@@ -62,7 +61,41 @@ public class ProgramController {
             @RequestHeader("X-User-Region-Id") Long regionId,
             @PathVariable Long programId
     ) {
+        log.info("프로그램 상세 조회 요청 - programId: {}, userId: {}, role: {}, regionId: {}",
+                programId, userId, role, regionId);
         ProgramDetailResponse response = programService.getProgramDetail(programId, role, regionId);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "관리자 - 프로그램 수정")
+    @PatchMapping("/admin/{programId}")
+    public ResponseEntity<Long> updateProgram(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Region-Id") Long regionId,
+            @PathVariable Long programId,
+            @Valid @RequestBody ProgramUpdateRequest request
+    ) {
+        log.info("프로그램 수정 요청 - programId: {}, regionId: {}, userId: {}, role: {}",
+                programId, regionId, userId, role);
+
+        Long updatedId = programService.updateProgram(programId, request, role, regionId);
+        return ResponseEntity.ok(updatedId);
+    }
+
+    @Operation(summary = "관리자 - 프로그램 삭제")
+    @DeleteMapping("/admin/{programId}")
+    public ResponseEntity<MessageResponse> deleteProgram(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Region-Id") Long regionId,
+            @PathVariable Long programId
+    ) {
+        log.info("프로그램 삭제 요청 - programId: {}, regionId: {}, userId: {}, role: {}",
+                programId, regionId, userId, role);
+
+        programService.deleteProgram(programId, role, regionId);
+        return ResponseEntity.ok(new MessageResponse("프로그램이 삭제되었습니다."));
+    }
+
 }

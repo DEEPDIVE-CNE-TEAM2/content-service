@@ -1,15 +1,13 @@
 package com.moyeorak.content_service.service;
 
-import com.moyeorak.content_service.dto.program.ProgramCreateRequest;
-import com.moyeorak.content_service.dto.program.ProgramDetailResponse;
-import com.moyeorak.content_service.dto.program.ProgramListResponse;
-import com.moyeorak.content_service.dto.program.ProgramResponse;
+import com.moyeorak.content_service.dto.program.*;
 
 import java.util.List;
 
 public interface ProgramService {
 
     ProgramResponse createProgram(ProgramCreateRequest request, Long userId, String role, Long regionId);
+
     List<ProgramListResponse> getProgramsByRegionAndTitle(
             String role,
             Long regionId,
@@ -17,4 +15,9 @@ public interface ProgramService {
     );
 
     ProgramDetailResponse getProgramDetail(Long programId, String role, Long regionId);
-    }
+
+    Long updateProgram(Long programId, ProgramUpdateRequest request, String role, Long regionId);
+
+    void deleteProgram(Long programId, String role, Long regionId);
+
+}
