@@ -9,7 +9,4 @@ import java.util.List;
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
     List<Notice> findByRegion_IdOrderByCreatedAtDesc(Long regionId);
     List<Notice> findByRegion(Region region);
-
-
-
 }

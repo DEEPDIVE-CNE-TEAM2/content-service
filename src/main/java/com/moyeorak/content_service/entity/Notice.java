@@ -34,8 +34,9 @@ public class Notice {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(name = "view_count", nullable = false)
-    private int viewCount;
+    private int viewCount = 0;
 
     @Column(name = "author_id", nullable = false)
     private Long authorId;

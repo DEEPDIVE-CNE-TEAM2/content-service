@@ -12,7 +12,4 @@ public interface NoticeService {
     void deleteNotice(Long noticeId, String role);
     List<PublicNoticeListResponse> getPublicNotices(Long targetRegionId);
     PublicNoticeDetailResponse getPublicNoticeDetail(Long noticeId);
-
-
-
-    }
+}
