@@ -12,7 +12,12 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "programs")
+@Table(
+        name = "programs",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"title", "region_id"})
+        }
+)
 public class Program {
 
     @Id
