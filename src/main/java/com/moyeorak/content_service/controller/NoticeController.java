@@ -1,5 +1,6 @@
 package com.moyeorak.content_service.controller;
 
+import com.moyeorak.content_service.dto.MessageResponse;
 import com.moyeorak.content_service.dto.notice.NoticeListResponse;
 import com.moyeorak.content_service.dto.notice.NoticeRequest;
 import com.moyeorak.content_service.dto.notice.NoticeResponse;
@@ -49,5 +50,25 @@ public class NoticeController {
             @PathVariable Long noticeId
     ) {
         return ResponseEntity.ok(noticeService.getNoticeDetail(noticeId, role));
+    }
+
+    @PatchMapping("/{noticeId}")
+    public ResponseEntity<NoticeResponse> updateNotice(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable Long noticeId,
+            @RequestBody NoticeRequest dto
+    ) {
+        log.info("공지사항 수정 요청 - noticeId: {}, role: {}", noticeId, role);
+        return ResponseEntity.ok(noticeService.updateNotice(noticeId, dto, role));
+    }
+
+    @DeleteMapping("/{noticeId}")
+    public ResponseEntity<MessageResponse> deleteNotice(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable Long noticeId
+    ) {
+        log.info("공지사항 삭제 요청 - noticeId: {}, role: {}", noticeId, role);
+        noticeService.deleteNotice(noticeId, role);
+        return ResponseEntity.ok(new MessageResponse("공지사항이 삭제되었습니다."));
     }
 }

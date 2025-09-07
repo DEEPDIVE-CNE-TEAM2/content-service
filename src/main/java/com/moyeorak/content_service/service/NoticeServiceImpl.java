@@ -69,4 +69,29 @@ public class NoticeServiceImpl implements NoticeService{
         return NoticeResponse.from(notice);
     }
 
+    @Override
+    @Transactional
+    public NoticeResponse updateNotice(Long noticeId, NoticeRequest dto, String role) {
+        adminAuthHelper.validateAdmin(role);
+
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
+
+        notice.setTitle(dto.getTitle());
+        notice.setContent(dto.getContent());
+
+        return NoticeResponse.from(notice);
+    }
+
+    @Override
+    @Transactional
+    public void deleteNotice(Long noticeId, String role) {
+        adminAuthHelper.validateAdmin(role);
+
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
+
+        noticeRepository.delete(notice);
+    }
+
 }

@@ -10,6 +10,8 @@ public interface NoticeService {
     NoticeResponse createNotice(NoticeRequest dto, Long userId, String role, Long regionId);
     NoticeResponse getNoticeDetail(Long noticeId, String role);
     List<NoticeListResponse> getNoticeList(String role, Long regionId);
+    NoticeResponse updateNotice(Long noticeId, NoticeRequest dto, String role);
+    void deleteNotice(Long noticeId, String role);
 
 
     }

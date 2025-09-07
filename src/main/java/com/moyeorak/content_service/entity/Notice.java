@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "notices")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -48,9 +49,5 @@ public class Notice {
         this.viewCount += 1;
     }
 
-    // 내용 수정 (update 요청용)
-    public void update(String title, String content) {
-        this.title = title;
-        this.content = content;
-    }
+
 }
