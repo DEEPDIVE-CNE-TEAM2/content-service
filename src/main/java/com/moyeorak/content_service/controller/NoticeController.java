@@ -1,9 +1,7 @@
 package com.moyeorak.content_service.controller;
 
 import com.moyeorak.content_service.dto.MessageResponse;
-import com.moyeorak.content_service.dto.notice.NoticeListResponse;
-import com.moyeorak.content_service.dto.notice.NoticeRequest;
-import com.moyeorak.content_service.dto.notice.NoticeResponse;
+import com.moyeorak.content_service.dto.notice.*;
 import com.moyeorak.content_service.service.NoticeService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +39,7 @@ public class NoticeController {
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Region-Id") Long regionId
     ) {
+        log.info("공지사항 리스트 조회 요청 - regionId: {}, role: {}", regionId, role);
         return ResponseEntity.ok(noticeService.getNoticeList(role, regionId));
     }
 
@@ -49,6 +48,7 @@ public class NoticeController {
             @RequestHeader("X-User-Role") String role,
             @PathVariable Long noticeId
     ) {
+        log.info("공지사항 상세 조회 요청 - noticeId: {}, role: {}", noticeId, role);
         return ResponseEntity.ok(noticeService.getNoticeDetail(noticeId, role));
     }
 
@@ -70,5 +70,21 @@ public class NoticeController {
         log.info("공지사항 삭제 요청 - noticeId: {}, role: {}", noticeId, role);
         noticeService.deleteNotice(noticeId, role);
         return ResponseEntity.ok(new MessageResponse("공지사항이 삭제되었습니다."));
+    }
+
+    @Operation(summary = "일반 사용자 공지사항 목록 조회")
+    @GetMapping("/public")
+    public ResponseEntity<List<PublicNoticeListResponse>> getPublicNotices(
+            @RequestParam("targetRegionId") Long targetRegionId
+    ) {
+        return ResponseEntity.ok(noticeService.getPublicNotices(targetRegionId));
+    }
+
+    @Operation(summary = "일반 사용자 공지사항 상세 조회")
+    @GetMapping("/public/{noticeId}")
+    public ResponseEntity<PublicNoticeDetailResponse> getPublicNoticeDetail(
+            @PathVariable Long noticeId
+    ) {
+        return ResponseEntity.ok(noticeService.getPublicNoticeDetail(noticeId));
     }
 }

@@ -3,9 +3,7 @@ package com.moyeorak.content_service.service;
 import com.moyeorak.common.exception.BusinessException;
 import com.moyeorak.common.exception.ErrorCode;
 import com.moyeorak.content_service.common.AdminAuthHelper;
-import com.moyeorak.content_service.dto.notice.NoticeListResponse;
-import com.moyeorak.content_service.dto.notice.NoticeRequest;
-import com.moyeorak.content_service.dto.notice.NoticeResponse;
+import com.moyeorak.content_service.dto.notice.*;
 import com.moyeorak.content_service.entity.Notice;
 import com.moyeorak.content_service.entity.Region;
 import com.moyeorak.content_service.repository.NoticeRepository;
@@ -92,6 +90,27 @@ public class NoticeServiceImpl implements NoticeService{
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
 
         noticeRepository.delete(notice);
+    }
+
+    // 일반 사용자 조회기능
+    @Override
+    @Transactional(readOnly = true)
+    public List<PublicNoticeListResponse> getPublicNotices(Long targetRegionId) {
+        List<Notice> notices = noticeRepository.findByRegion_IdOrderByCreatedAtDesc(targetRegionId);
+        return notices.stream()
+                .map(PublicNoticeListResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public PublicNoticeDetailResponse getPublicNoticeDetail(Long noticeId) {
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
+
+        notice.increaseViewCount();// 뷰카운트증가
+
+        return PublicNoticeDetailResponse.from(notice);
     }
 
 }
