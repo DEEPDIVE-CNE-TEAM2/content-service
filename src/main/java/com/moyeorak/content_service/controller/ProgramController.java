@@ -67,7 +67,7 @@ public class ProgramController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "관리자 - 프로그램 수정")
+    @Operation(summary = "프로그램 수정")
     @PatchMapping("/{programId}")
     public ResponseEntity<Long> updateProgram(
             @RequestHeader("X-User-Id") Long userId,
@@ -83,7 +83,7 @@ public class ProgramController {
         return ResponseEntity.ok(updatedId);
     }
 
-    @Operation(summary = "관리자 - 프로그램 삭제")
+    @Operation(summary = "프로그램 삭제")
     @DeleteMapping("/{programId}")
     public ResponseEntity<MessageResponse> deleteProgram(
             @RequestHeader("X-User-Id") Long userId,
