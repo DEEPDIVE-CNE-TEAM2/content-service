@@ -20,4 +20,8 @@ public interface ProgramService {
 
     void deleteProgram(Long programId, String role, Long regionId);
 
+    List<ProgramDisplayResponse> getAllPrograms(Long userRegionId);
+    List<ProgramDisplayResponse> getProgramsByRegion(Long regionId, Long userRegionId);
+    ProgramDisplayResponse getProgramById(Long id, Long userRegionId);
+
 }

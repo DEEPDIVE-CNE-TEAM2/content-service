@@ -68,7 +68,7 @@ public class ProgramController {
     }
 
     @Operation(summary = "관리자 - 프로그램 수정")
-    @PatchMapping("/admin/{programId}")
+    @PatchMapping("/{programId}")
     public ResponseEntity<Long> updateProgram(
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role,
@@ -84,7 +84,7 @@ public class ProgramController {
     }
 
     @Operation(summary = "관리자 - 프로그램 삭제")
-    @DeleteMapping("/admin/{programId}")
+    @DeleteMapping("/{programId}")
     public ResponseEntity<MessageResponse> deleteProgram(
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role,
@@ -98,4 +98,30 @@ public class ProgramController {
         return ResponseEntity.ok(new MessageResponse("프로그램이 삭제되었습니다."));
     }
 
+    @Operation(summary = "일반 사용자 조회")
+    @GetMapping("/public")
+    public ResponseEntity<List<ProgramDisplayResponse>> getPrograms(
+            @RequestHeader(value = "X-User-Region-Id", required = false) Long regionId,
+            @RequestParam(value = "targetRegionId", required = false) Long targetRegionId
+    ) {
+        log.info("일반 사용자 프로그램 목록 조회 요청 - targetRegionId: {}, regionId(X-User-Region-Id): {}",
+                targetRegionId, regionId);
+
+        if (targetRegionId != null) {
+            return ResponseEntity.ok(programService.getProgramsByRegion(targetRegionId, regionId));
+        } else {
+            return ResponseEntity.ok(programService.getAllPrograms(regionId));
+        }
+    }
+
+    @Operation(summary = "일반 사용자 상세조회")
+    @GetMapping("/public/{id}")
+    public ResponseEntity<ProgramDisplayResponse> getProgramById(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Region-Id", required = false) Long regionId
+    ) {
+        log.info("일반 사용자 프로그램 상세조회 요청 - programId: {}, regionId(X-User-Region-Id): {}", id, regionId);
+
+        return ResponseEntity.ok(programService.getProgramById(id, regionId));
+    }
 }

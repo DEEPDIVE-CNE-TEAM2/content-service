@@ -10,4 +10,7 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
     List<Program> findByRegion(Region region);
 
     List<Program> findByRegionAndTitleContainingIgnoreCase(Region region, String title);
+
+    List<Program> findByRegion_Id(Long regionId);
+
 }

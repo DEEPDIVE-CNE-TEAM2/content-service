@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -185,6 +186,25 @@ public class ProgramServiceImpl implements ProgramService {
         programRepository.delete(program);
     }
 
+    // 일반 유저 조회
+    public List<ProgramDisplayResponse> getAllPrograms(Long regionId) {
+        return programRepository.findAll().stream()
+                .map(program -> toDisplayResponse(program, regionId))
+                .toList();
+    }
+
+    public List<ProgramDisplayResponse> getProgramsByRegion(Long targetRegionId, Long regionId) {
+        return programRepository.findByRegion_Id(targetRegionId).stream()
+                .map(program -> toDisplayResponse(program, regionId))
+                .toList();
+    }
+
+    public ProgramDisplayResponse getProgramById(Long id, Long regionId) {
+        Program program = programRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROGRAM));
+
+        return toDisplayResponse(program, regionId);
+    }
 
 
     // 시간 포매팅
@@ -256,4 +276,29 @@ public class ProgramServiceImpl implements ProgramService {
                 .build();
     }
 
+    private ProgramDisplayResponse toDisplayResponse(Program program, Long regionId) {
+        Long programRegionId = program.getRegion() != null ? program.getRegion().getId() : null;
+        boolean inRegion = Objects.equals(regionId, programRegionId);
+
+        return ProgramDisplayResponse.builder()
+                .id(program.getId())
+                .title(program.getTitle())
+                .location(program.getFacility().getName())
+                .target(program.getTarget())
+                .usagePeriod(formatDateRange(program.getUsageStartDate(), program.getUsageEndDate()))
+                .classTime(formatTimeRange(program.getClassStartTime(), program.getClassEndTime()))
+                .registrationPeriod(formatDateRange(program.getRegistrationStartDate(), program.getRegistrationEndDate()))
+                .cancelEndDate(program.getCancelEndDate().toString())
+                .inPrice(program.getInPrice())
+                .outPrice(program.getOutPrice())
+                .appliedPrice(inRegion ? program.getInPrice() : program.getOutPrice())
+                .inRegion(inRegion)
+                .capacity(program.getCapacity())
+                .contact(program.getContact())
+                .description(program.getDescription())
+                .imageUrl(program.getImageUrl())
+                .regionId(program.getRegion().getId())
+                .instructorName(program.getInstructorName())
+                .build();
+    }
 }
