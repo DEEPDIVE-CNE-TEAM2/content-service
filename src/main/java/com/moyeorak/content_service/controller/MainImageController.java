@@ -63,4 +63,14 @@ public class MainImageController {
         mainImageService.deleteById(id, role);
         return ResponseEntity.ok(new MessageResponse("메인이미지가 삭제되었습니다."));
     }
+
+
+    @Operation(summary = "일반 사용자 메인이미지 조회")
+    @GetMapping("/public")
+    public ResponseEntity<List<MainImageResponse>> getPublicMainImages(
+            @RequestParam("targetRegionId") Long targetRegionId
+    ) {
+        log.info("일반 사용자 메인이미지 조회 요청 - regionId: {}", targetRegionId);
+        return ResponseEntity.ok(mainImageService.getByRegion(targetRegionId));
+    }
 }

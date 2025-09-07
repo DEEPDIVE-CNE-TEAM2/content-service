@@ -83,4 +83,12 @@ public class MainImageServiceImpl implements MainImageService {
 
         mainImageRepository.deleteById(id);
     }
+
+    // 일반 사용자 조회
+    @Transactional(readOnly = true)
+    public List<MainImageResponse> getByRegion(Long targetRegionId) {
+        return mainImageRepository.findByRegionIdAndIsActiveTrueOrderByDisplayOrderAsc(targetRegionId).stream()
+                .map(MainImageResponse::from)
+                .toList();
+    }
 }

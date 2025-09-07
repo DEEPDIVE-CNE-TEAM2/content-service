@@ -15,4 +15,6 @@ public interface MainImageService {
     void updateMainImages(List<MainImageUpdateRequest> requestList, String role);
 
     void deleteById(Long id, String role);
+
+    List<MainImageResponse> getByRegion(Long targetRegionId);
 }

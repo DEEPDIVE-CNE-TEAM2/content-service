@@ -9,8 +9,7 @@ import java.util.List;
 
 public interface MainImageRepository extends JpaRepository<MainImage, Long> {
     List<MainImage> findByRegionIdOrderByDisplayOrderAsc(Long regionId);
-    boolean existsByRegionIdAndDisplayOrder(Long regionId, Integer displayOrder);
-
+    List<MainImage> findByRegionIdAndIsActiveTrueOrderByDisplayOrderAsc(Long targetRegionId);
     @Query("SELECT MAX(m.displayOrder) FROM MainImage m WHERE m.region.id = :regionId")
     Integer findMaxDisplayOrderByRegionId(Long regionId);
 }
