@@ -4,6 +4,8 @@ import com.moyeorak.common.exception.BusinessException;
 import com.moyeorak.common.exception.ErrorCode;
 import com.moyeorak.content_service.common.AdminAuthHelper;
 import com.moyeorak.content_service.dto.program.ProgramCreateRequest;
+import com.moyeorak.content_service.dto.program.ProgramDetailResponse;
+import com.moyeorak.content_service.dto.program.ProgramListResponse;
 import com.moyeorak.content_service.dto.program.ProgramResponse;
 import com.moyeorak.content_service.entity.Facility;
 import com.moyeorak.content_service.entity.Program;
@@ -14,6 +16,10 @@ import com.moyeorak.content_service.repository.RegionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -70,4 +76,114 @@ public class ProgramServiceImpl implements ProgramService {
 
         return ProgramResponse.from(saved);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProgramListResponse> getProgramsByRegionAndTitle(
+            String role,
+            Long regionId,
+            String title
+    ) {
+        // 1. 관리자 권한 검증
+        adminAuthHelper.validateAdmin(role);
+
+        // 지역 엔티티 조회
+        Region targetRegion = regionRepository.findById(regionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_REGION));
+
+        // 프로그램 리스트 조회 (타이틀 필터 유무)
+        List<Program> programs = (title == null || title.trim().isEmpty())
+                ? programRepository.findByRegion(targetRegion)
+                : programRepository.findByRegionAndTitleContainingIgnoreCase(targetRegion, title.trim());
+
+        //  DTO 변환
+        return programs.stream()
+                .map(this::toAdminListDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProgramDetailResponse getProgramDetail(Long programId, String role, Long regionId) {
+        // 관리자 권한 검증
+        adminAuthHelper.validateAdmin(role);
+
+        // 프로그램 조회
+        Program program = programRepository.findById(programId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROGRAM));
+
+        // DTO로 변환
+        return toProgramDetailResponse(program);
+    }
+
+
+    // 시간 포매팅
+    private String formatTimeRange(LocalTime start, LocalTime end) {
+        return start + " ~ " + end;
+    }
+
+    // 날짜 "YYYY-MM-DD ~ YYYY-MM-DD" 포맷팅
+    private String formatDateRange(LocalDate start, LocalDate end) {
+        return start + " ~ " + end;
+    }
+
+    // 오늘 날짜 기준으로 수업 상태 판단: 수업 예정 / 진행중 / 수업 종료
+    private String getProgressStatus(LocalDate start, LocalDate end) {
+        LocalDate today = LocalDate.now();
+        if (today.isBefore(start)) return "수업 예정";
+        else if (!today.isAfter(end)) return "진행중";
+        else return "수업 종료";
+    }
+
+    private ProgramListResponse toAdminListDto(Program program) {
+        int currentEnrollment = 0; // 일단 0으로 시작. 나중에 enrollmentRepository.countByProgramId()로 바꿀거임
+
+        return ProgramListResponse.builder()
+                .id(program.getId())
+                .title(program.getTitle())
+                .facilityName(program.getFacility().getName())
+                .usagePeriod(formatDateRange(program.getUsageStartDate(), program.getUsageEndDate()))
+                .capacity(program.getCapacity())
+                .currentEnrollment(currentEnrollment)
+                .progressStatus(getProgressStatus(program.getUsageStartDate(), program.getUsageEndDate()))
+                .build();
+    }
+
+    private ProgramDetailResponse toProgramDetailResponse(Program program) {
+        return ProgramDetailResponse.builder()
+                .id(program.getId())
+                .title(program.getTitle())
+
+                .regionId(program.getRegion().getId())
+                .regionName(program.getRegion().getName())
+                .facilityId(program.getFacility().getId())
+                .facilityName(program.getFacility().getName())
+
+                .category(program.getCategory())
+                .target(program.getTarget())
+                .instructorName(program.getInstructorName())
+                .status(program.getStatus().name())
+
+                .usageStartDate(program.getUsageStartDate())
+                .usageEndDate(program.getUsageEndDate())
+                .registrationStartDate(program.getRegistrationStartDate())
+                .registrationEndDate(program.getRegistrationEndDate())
+                .cancelEndDate(program.getCancelEndDate())
+
+                .classStartTime(program.getClassStartTime())
+                .classEndTime(program.getClassEndTime())
+
+                .usagePeriod(formatDateRange(program.getUsageStartDate(), program.getUsageEndDate()))
+                .classTime(formatTimeRange(program.getClassStartTime(), program.getClassEndTime()))
+                .registrationPeriod(formatDateRange(program.getRegistrationStartDate(), program.getRegistrationEndDate()))
+
+                .inPrice(program.getInPrice())
+                .outPrice(program.getOutPrice())
+                .capacity(program.getCapacity())
+                .contact(program.getContact())
+                .imageUrl(program.getImageUrl())
+                .description(program.getDescription())
+                .build();
+    }
+
 }
