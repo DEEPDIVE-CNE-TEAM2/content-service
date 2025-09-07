@@ -3,6 +3,7 @@ package com.moyeorak.content_service.service;
 import com.moyeorak.common.exception.BusinessException;
 import com.moyeorak.common.exception.ErrorCode;
 import com.moyeorak.content_service.common.AdminAuthHelper;
+import com.moyeorak.content_service.dto.feign.ProgramDto;
 import com.moyeorak.content_service.dto.program.*;
 import com.moyeorak.content_service.entity.Facility;
 import com.moyeorak.content_service.entity.Program;
@@ -204,6 +205,25 @@ public class ProgramServiceImpl implements ProgramService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROGRAM));
 
         return toDisplayResponse(program, regionId);
+    }
+
+
+    // 내부통신
+    @Override
+    public ProgramDto getProgramDtoById(Long id) {
+        Program program = programRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROGRAM));
+
+        return ProgramDto.builder()
+                .id(program.getId())
+                .regionId(program.getRegion().getId())
+                .inPrice(program.getInPrice())
+                .outPrice(program.getOutPrice())
+                .classStartTime(program.getClassStartTime())
+                .classEndTime(program.getClassEndTime())
+                .instructorName(program.getInstructorName())
+                .cancelEndDate(program.getCancelEndDate() == null ? null : program.getCancelEndDate().toString())
+                .build();
     }
 
 
