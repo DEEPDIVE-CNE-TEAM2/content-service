@@ -47,6 +47,10 @@ public class ProgramServiceImpl implements ProgramService {
             throw new BusinessException(ErrorCode.FACILITY_REGION_MISMATCH);
         }
 
+        if (programRepository.existsByTitleAndRegion_Id(request.getTitle(), regionId)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_PROGRAM_TITLE_IN_REGION);
+        }
+
         // 4. 프로그램 생성
         Program program = Program.builder()
                 .title(request.getTitle())

@@ -13,4 +13,7 @@ public interface ProgramRepository extends JpaRepository<Program, Long> {
 
     List<Program> findByRegion_Id(Long regionId);
 
+    boolean existsByTitleAndRegion_Id(String title, Long regionId);
+
+
 }
