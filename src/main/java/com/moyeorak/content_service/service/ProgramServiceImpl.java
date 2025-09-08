@@ -221,12 +221,14 @@ public class ProgramServiceImpl implements ProgramService {
         return ProgramDto.builder()
                 .id(program.getId())
                 .regionId(program.getRegion().getId())
+                .title(program.getTitle())
                 .inPrice(program.getInPrice())
                 .outPrice(program.getOutPrice())
                 .classStartTime(program.getClassStartTime())
                 .classEndTime(program.getClassEndTime())
                 .instructorName(program.getInstructorName())
-                .cancelEndDate(program.getCancelEndDate() == null ? null : program.getCancelEndDate().toString())
+                .cancelEndDate(program.getCancelEndDate())
+                .capacity(program.getCapacity())
                 .build();
     }
 
