@@ -36,8 +36,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0'
-
-	implementation 'com.github.DEEPDIVE-CNE-TEAM2:moyeorak-common:v1.0.5'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'com.github.DEEPDIVE-CNE-TEAM2:moyeorak-common:v1.0.4'
 	//implementation("com.moyeorak:moyeorak-common") //로컬 연결할때만
 
 	implementation 'software.amazon.awssdk:s3:2.27.3'

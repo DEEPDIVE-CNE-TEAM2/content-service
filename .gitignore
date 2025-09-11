@@ -27,6 +27,7 @@ logs/
 *.log
 *.tmp
 *.swp
+nohup.out
 
 ### Spring Boot ###
 /bin/
