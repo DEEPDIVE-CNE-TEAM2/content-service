@@ -16,3 +16,9 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
     show-sql: false
 
+cloud:
+  aws:
+    region:
+      static: ap-northeast-2   # 서울 리전
+    s3:
+      bucket: goorm-presigned-url
