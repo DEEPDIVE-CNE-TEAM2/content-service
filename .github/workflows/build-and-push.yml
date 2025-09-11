@@ -8,21 +8,59 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  SERVICE_NAME: content
   ECR_REGISTRY: 004407157704.dkr.ecr.ap-northeast-2.amazonaws.com
   ECR_IMAGE_NAME: 004407157704.dkr.ecr.ap-northeast-2.amazonaws.com/content-service
+  GRADLE_VERSION: 7.6
 
 jobs:
   build-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Print repo files (debug)
+        run: |
+          echo "PWD=$(pwd)"
+          ls -la
+          ls -la gradle || true
+          ls -la gradle/wrapper || true
+          cat .dockerignore || true
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+
+      - name: Install pinned Gradle (non-interactive) and expose to PATH
+        run: |
+          set -euo pipefail
+          echo "Installing Gradle ${GRADLE_VERSION} to /opt (non-interactive)"
+          sudo apt-get update -y
+          sudo apt-get install -y curl unzip jq
+          DIST="gradle-${GRADLE_VERSION}-bin.zip"
+          URL="https://services.gradle.org/distributions/${DIST}"
+          wget -q "$URL" -O /tmp/gradle.zip
+          sudo unzip -o -q /tmp/gradle.zip -d /opt
+          sudo ln -sfn "/opt/gradle-${GRADLE_VERSION}" /opt/gradle
+          echo "/opt/gradle/bin" >> $GITHUB_PATH
+          echo "Gradle installed: $(/opt/gradle/bin/gradle -v | head -n 1)"
+
+      - name: (optional) Generate gradle wrapper if missing
+        run: |
+          set -euo pipefail
+          if [ -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "gradle-wrapper.jar present, skipping wrapper generation"
+          else
+            /opt/gradle/bin/gradle wrapper || true
+          fi
+
+      - name: Build JAR on runner using pinned Gradle
+        run: |
+          set -euo pipefail
+          /opt/gradle/bin/gradle --no-daemon clean bootJar -x test --warning-mode all
+          ls -la build/libs || true
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -40,60 +78,69 @@ jobs:
         env:
           SHORT_SHA: ${{ github.sha }}
         run: |
+          set -euo pipefail
           SHORT=${SHORT_SHA::7}
-          SHA_TAG=${ECR_IMAGE_NAME}:${SHORT}
           LATEST_TAG=${ECR_IMAGE_NAME}:latest
-
-          echo "Building ${SHA_TAG}"
+          SHA_TAG=${ECR_IMAGE_NAME}:${SHORT}
           docker build -t ${SHA_TAG} .
           docker tag ${SHA_TAG} ${LATEST_TAG}
-
           docker push ${SHA_TAG}
           docker push ${LATEST_TAG}
-
-          echo "IMAGE_SHA=${SHA_TAG}" >> $GITHUB_ENV
           echo "IMAGE_LATEST=${LATEST_TAG}" >> $GITHUB_ENV
+          echo "IMAGE_SHA=${SHA_TAG}" >> $GITHUB_ENV
 
-      - name: Trigger ArgoCD sync for content
+      - name: Trigger ArgoCD sync via CLI (sanitized host, short poll, --insecure)
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
-          ARGOCD_APP: content
         run: |
-          echo "Installing jq..."
-          sudo apt-get update -y
-          sudo apt-get install -y jq curl
+          set -euo pipefail
+          echo "---- ArgoCD CLI sync (sanitized host, short poll) ----"
 
-          echo "Triggering ArgoCD sync for app: ${ARGOCD_APP} on ${ARGOCD_SERVER}"
-          # Trigger sync
-          curl -s -k -X POST "https://${ARGOCD_SERVER}/api/v1/applications/${ARGOCD_APP}/sync" \
-            -H "Authorization: Bearer ${ARGOCD_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d '{}'
+          HOST="${ARGOCD_SERVER#https://}"
+          HOST="${HOST#http://}"
+          HOST="${HOST%/}"
+          echo "Using ArgoCD host: $HOST"
 
-          # Poll status (timeout ~150s: 30 * 5s)
-          for i in $(seq 1 30); do
-            sleep 5
-            STATUS_JSON=$(curl -s -k -H "Authorization: Bearer ${ARGOCD_TOKEN}" "https://${ARGOCD_SERVER}/api/v1/applications/${ARGOCD_APP}/status")
-            # Try operationState.phase, fallback to sync.status
-            PHASE=$(echo "$STATUS_JSON" | jq -r '.status.operationState.phase // empty')
-            SYNC_STATUS=$(echo "$STATUS_JSON" | jq -r '.status.sync.status // empty')
-            CUR_STATUS=${PHASE:-$SYNC_STATUS}
-            echo "ArgoCD status: $CUR_STATUS (attempt $i/30)"
-            if [ "$CUR_STATUS" = "Succeeded" ] || [ "$CUR_STATUS" = "Synced" ]; then
-              echo "ArgoCD sync succeeded."
-              exit 0
-            fi
-            if [ "$CUR_STATUS" = "Failed" ] || [ "$CUR_STATUS" = "Error" ]; then
-              echo "ArgoCD sync failed."
-              echo "$STATUS_JSON" | jq .
-              exit 1
+          curl -sSL https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 -o ./argocd
+          chmod +x ./argocd
+          ./argocd version --client || true
+
+          run_argocd() {
+            ./argocd --server "$HOST" --insecure --grpc-web --auth-token "${ARGOCD_TOKEN}" "$@"
+          }
+
+          echo "---- app get content (diagnostic) ----"
+          run_argocd app get content -o json || true
+
+          echo "---- issuing app sync content (no wait) ----"
+          run_argocd app sync content --prune --force || true
+
+          echo "---- short polling app status (max 3 tries) ----"
+          tries=3
+          sleep_sec=4
+          ok=0
+          for i in $(seq 1 $tries); do
+            sleep $sleep_sec
+            status_json=$( run_argocd app get content -o json 2>/dev/null || true )
+            phase=$(echo "$status_json" | jq -r '.status.operationState.phase // empty' 2>/dev/null || true)
+            syncstatus=$(echo "$status_json" | jq -r '.status.sync.status // empty' 2>/dev/null || true)
+            echo "Attempt $i/$tries: operationState.phase='$phase' sync.status='$syncstatus'"
+            if [ "$phase" = "Succeeded" ] || [ "$syncstatus" = "Synced" ]; then
+              echo "ArgoCD app is synced/succeeded."
+              ok=1
+              break
             fi
           done
 
-          echo "ArgoCD sync timed out after 150s"
-          echo "$STATUS_JSON" | jq .
-          exit 1
+          if [ $ok -ne 1 ]; then
+            echo "App did not reach Synced/Succeeded within short timeout or encountered error."
+            echo "Last status JSON:"
+            echo "$status_json" | jq . || true
+            exit 5
+          fi
+
+          echo "ArgoCD sync finished successfully."
 
       - name: Cleanup local images
         run: docker image prune -af || true
