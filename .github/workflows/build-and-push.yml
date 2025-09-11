@@ -89,6 +89,28 @@ jobs:
           echo "IMAGE_LATEST=${LATEST_TAG}" >> $GITHUB_ENV
           echo "IMAGE_SHA=${SHA_TAG}" >> $GITHUB_ENV
 
+      - name: Clone infra repo
+        run: |
+          git clone https://x-access-token:${{ secrets.GITHUB_PAT }}@github.com/DEEPDIVE-CNE-TEAM2/moyeorak-infra.git infra
+          cd infra
+          git checkout main
+
+      - name: Update infra manifest with new image
+        run: |
+          cd infra
+          NEW_IMAGE="${ECR_IMAGE_NAME}:${IMAGE_SHORT}"
+          echo "Updating image -> $NEW_IMAGE"
+          # yq 설치
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          # 실제 k8s manifest 수정 (content-service Deployment 기준)
+          yq eval -i '(.spec.template.spec.containers[] | select(.name=="content") .image) = strenv(NEW_IMAGE)' k8s/content/content-all.yml
+          git config user.email "github-actions@github.com"
+          git config user.name "github-actions"
+          git add k8s/content/content-all.yml
+          git commit -m "ci: update content-service image -> ${NEW_IMAGE}" || echo "No changes to commit"
+          git push origin main
+
       - name: Trigger ArgoCD sync via CLI (sanitized host, short poll, --insecure)
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
